@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel | My Links</title>
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <div class="login-box">
+        <h1 class="login-title">Admin Panel</h1>
+        <p class="login-subtitle">Manage your links</p>
+        
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <label for="admin-password">Admin Password</label>
+            <input 
+              type="password" 
+              id="admin-password" 
+              class="form-input" 
+              placeholder="Enter password"
+              required
+            >
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-full">
+            Login
+          </button>
+          
+          <p class="login-hint">💡 Default password: <strong>admin123</strong></p>
+          <p class="login-note">⚠️ Change this in admin.js for security</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="admin-screen" class="screen">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">My Links Admin</h2>
+        <button id="logout-btn" class="btn-logout" aria-label="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="sidebar-nav">
+        <button class="nav-item active" data-tab="links-list">
+          <span>📋</span> My Links
+        </button>
+        <button class="nav-item" data-tab="add-link">
+          <span>➕</span> Add Link
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span>⚙️</span> Settings
+        </button>
+      </div>
+      
+      <div class="sidebar-footer">
+        <p class="footer-text">Links Manager v1.0</p>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      
+      <!-- Links List Tab -->
+      <section id="links-list" class="tab-content active">
+        <div class="section-header">
+          <h2>My Links</h2>
+          <p class="section-subtitle">Manage all your links here</p>
+        </div>
+        
+        <div class="stats-bar">
+          <div class="stat">
+            <span class="stat-label">Total Links</span>
+            <span class="stat-value" id="total-links">0</span>
+          </div>
+        </div>
+        
+        <div id="links-table-container" class="table-container">
+          <table class="links-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>URL</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="links-tbody">
+              <!-- Links will be rendered here -->
+            </tbody>
+          </table>
+          
+          <div id="no-links-message" class="no-content">
+            <p>📭 No links yet. <a href="#" class="link-add-new">Add your first link</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add Link Tab -->
+      <section id="add-link" class="tab-content">
+        <div class="section-header">
+          <h2>Add New Link</h2>
+          <p class="section-subtitle">Create a new link entry</p>
+        </div>
+        
+        <form id="add-link-form" class="form-grid">
+          
+          <div class="form-group">
+            <label for="link-icon">Icon (Emoji)</label>
+            <input 
+              type="text" 
+              id="link-icon" 
+              class="form-input" 
+              placeholder="e.g., 🔥"
+              maxlength="2"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="link-title">Title *</label>
+            <input 
+              type="text" 
+              id="link-title" 
+              class="form-input" 
+              placeholder="e.g., ChatGPT"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="link-category">Category *</label>
+            <select id="link-category" class="form-input" required>
+              <option value="">Select category</option>
+              <option value="recommended">Recommended</option>
+              <option value="deals">Deals</option>
+              <option value="ai-tools">AI Tools</option>
+              <option value="hosting">Hosting</option>
+              <option value="finance">Finance</option>
+              <option value="health">Health</option>
+              <option value="resources">Resources</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="link-badge">Badge</label>
+            <select id="link-badge" class="form-input">
+              <option value="">None</option>
+              <option value="HOT">🔥 HOT</option>
+              <option value="FREE">🎁 FREE</option>
+              <option value="DEAL">🤝 DEAL</option>
+            </select>
+          </div>
+
+          <div class="form-group form-full">
+            <label for="link-description">Description *</label>
+            <textarea 
+              id="link-description" 
+              class="form-input" 
+              placeholder="Brief description (2 lines max)"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group form-full">
+            <label for="link-commission">Commission Info</label>
+            <input 
+              type="text" 
+              id="link-commission" 
+              class="form-input" 
+              placeholder="e.g., Earns $20 per referral"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="link-cta">CTA Button Text</label>
+            <input 
+              type="text" 
+              id="link-cta" 
+              class="form-input" 
+              placeholder="e.g., Join Free"
+            >
+          </div>
+
+          <div class="form-group form-full">
+            <label for="link-url">URL *</label>
+            <input 
+              type="url" 
+              id="link-url" 
+              class="form-input" 
+              placeholder="https://example.com"
+              required
+            >
+          </div>
+
+          <div class="form-group form-full checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="link-highlight" class="checkbox-input">
+              <span>Highlight this link (green border)</span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              ➕ Add Link
+            </button>
+            <button type="reset" class="btn btn-secondary">
+              Clear
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Settings Tab -->
+      <section id="settings" class="tab-content">
+        <div class="section-header">
+          <h2>Settings</h2>
+          <p class="section-subtitle">Manage admin settings</p>
+        </div>
+        
+        <div class="settings-card">
+          <h3 class="settings-title">Change Admin Password</h3>
+          <form id="password-form" class="form-inline">
+            <div class="form-group">
+              <label for="new-password">New Password</label>
+              <input 
+                type="password" 
+                id="new-password" 
+                class="form-input" 
+                placeholder="Enter new password"
+                required
+              >
+            </div>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+          </form>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-title">Export Data</h3>
+          <p class="settings-description">Download your links as JSON</p>
+          <button id="export-btn" class="btn btn-secondary">
+            📥 Export Links
+          </button>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="settings-title">Import Data</h3>
+          <p class="settings-description">Import links from a JSON file</p>
+          <input type="file" id="import-file" class="hidden-input" accept=".json">
+          <button id="import-btn" class="btn btn-secondary">
+            📤 Import Links
+          </button>
+        </div>
+
+        <div class="settings-card danger">
+          <h3 class="settings-title">Danger Zone</h3>
+          <p class="settings-description">Delete all links permanently</p>
+          <button id="clear-all-btn" class="btn btn-danger">
+            🗑️ Clear All Links
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Edit Link Modal -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Link</h2>
+        <button class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      
+      <form id="edit-link-form" class="form-grid">
+        <input type="hidden" id="edit-link-id">
+        
+        <div class="form-group">
+          <label for="edit-link-icon">Icon (Emoji)</label>
+          <input 
+            type="text" 
+            id="edit-link-icon" 
+            class="form-input" 
+            placeholder="e.g., 🔥"
+            maxlength="2"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="edit-link-title">Title *</label>
+          <input 
+            type="text" 
+            id="edit-link-title" 
+            class="form-input" 
+            placeholder="e.g., ChatGPT"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="edit-link-category">Category *</label>
+          <select id="edit-link-category" class="form-input" required>
+            <option value="">Select category</option>
+            <option value="recommended">Recommended</option>
+            <option value="deals">Deals</option>
+            <option value="ai-tools">AI Tools</option>
+            <option value="hosting">Hosting</option>
+            <option value="finance">Finance</option>
+            <option value="health">Health</option>
+            <option value="resources">Resources</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-link-badge">Badge</label>
+          <select id="edit-link-badge" class="form-input">
+            <option value="">None</option>
+            <option value="HOT">🔥 HOT</option>
+            <option value="FREE">🎁 FREE</option>
+            <option value="DEAL">🤝 DEAL</option>
+          </select>
+        </div>
+
+        <div class="form-group form-full">
+          <label for="edit-link-description">Description *</label>
+          <textarea 
+            id="edit-link-description" 
+            class="form-input" 
+            placeholder="Brief description (2 lines max)"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group form-full">
+          <label for="edit-link-commission">Commission Info</label>
+          <input 
+            type="text" 
+            id="edit-link-commission" 
+            class="form-input" 
+            placeholder="e.g., Earns $20 per referral"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="edit-link-cta">CTA Button Text</label>
+          <input 
+            type="text" 
+            id="edit-link-cta" 
+            class="form-input" 
+            placeholder="e.g., Join Free"
+          >
+        </div>
+
+        <div class="form-group form-full">
+          <label for="edit-link-url">URL *</label>
+          <input 
+            type="url" 
+            id="edit-link-url" 
+            class="form-input" 
+            placeholder="https://example.com"
+            required
+          >
+        </div>
+
+        <div class="form-group form-full checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="edit-link-highlight" class="checkbox-input">
+            <span>Highlight this link (green border)</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            💾 Save Changes
+          </button>
+          <button type="button" class="btn btn-secondary modal-close">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Scripts -->
+  <script src="admin.js"></script>
+</body>
+</html>
