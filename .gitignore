@@ -1,0 +1,27 @@
+# Admin Panel (local development only)
+/admin/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+
+# Node modules (if you add any)
+node_modules/
+package-lock.json
+
+# Environment files
+.env
+.env.local
+
+# Cache files
+*.cache
+.cache/
+
+# Placeholder folders (keep images folder tracked)
+# But ignore working placeholder files
+.DS_Store
+*.tmp

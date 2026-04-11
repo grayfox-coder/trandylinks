@@ -379,6 +379,16 @@ body {
   line-height: 1;
 }
 
+.card-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  padding: 0.5rem;
+  flex-shrink: 0;
+}
+
 .card-badge {
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
   color: #ffffff;

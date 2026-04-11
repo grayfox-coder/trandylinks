@@ -48,15 +48,15 @@ Edit `script.js` and find the `links` array (around line 50):
 const links = [
   {
     id: "link_1",
-    icon: "🛒",           // Emoji icon
-    badge: "HOT",         // "HOT", "FREE", "DEAL", or ""
+    image: "https://example.com/logo.png",  // Image URL (PNG/JPG)
+    badge: "HOT",                            // "HOT", "FREE", "DEAL", or ""
     title: "Product Name",
     description: "Short description of the product.",
-    category: "recommended", // See categories below
+    category: "recommended",                 // See categories below
     commission: "Earns up to 40%",
-    cta: "Join Free",     // Button text
-    url: "./go/product/", // Link to redirect page or direct URL
-    highlight: true       // Green border highlight
+    cta: "Join Free",                        // Button text
+    url: "https://example.com/",             // Affiliate URL
+    highlight: true                          // Green border highlight
   },
   // Add more links...
 ];

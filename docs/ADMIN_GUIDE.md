@@ -1,15 +1,15 @@
 # Admin Panel Guide
 
-Your admin panel is ready to use! Access it at `admin.html`.
+Your admin panel is ready to use! Access it at `admin/admin.html`.
 
 ## 🚀 Quick Start
 
 ### Default Login
-- **URL**: `admin.html`
+- **URL**: `admin/admin.html`
 - **Password**: `admin123`
 
 ### ⚠️ IMPORTANT: Change the Password
-1. Open `admin.js`
+1. Open `admin/admin.js`
 2. Find line ~18: `password: btoa('admin123'),`
 3. Change `'admin123'` to your desired password
 4. The password is automatically hashed using Base64
@@ -35,7 +35,10 @@ password: btoa('YourNewSecurePassword123'), // Change to your password
 **Tab: Add Link**
 
 Fill in the form:
-- **Icon** (Emoji): e.g., 🤖, 📚, 💼
+- **Image URL** *: Link to product logo/image (PNG or JPG recommended)
+  - Example: `https://example.com/logo.png`
+  - Tip: Use images with transparent background for best results
+  - Recommended size: 100x100px or larger
 - **Title**: Product/link name
 - **Category**: Choose from:
   - Recommended
@@ -62,7 +65,7 @@ Fill in the form:
 
 #### Change Password
 - Enter a new password (minimum 6 characters)
-- Update `admin.js` with the new hashed password
+- Update `admin/admin.js` with the new hashed password
 - Note: You'll see the instructions on screen
 
 #### Export Links
@@ -103,7 +106,7 @@ Each link object has:
 ```javascript
 {
   id: "link_1234567890",        // Auto-generated unique ID
-  icon: "🤖",                    // Emoji icon
+  image: "https://...",          // Image URL (PNG/JPG)
   badge: "HOT",                  // "HOT", "FREE", "DEAL", or ""
   title: "ChatGPT",              // Product name
   description: "AI chat...",     // Brief description
@@ -136,7 +139,7 @@ Each link object has:
 [
   {
     "id": "link_1704067890",
-    "icon": "🤖",
+    "image": "https://openai.com/favicon.png",
     "badge": "HOT",
     "title": "ChatGPT Plus",
     "description": "Get GPT-4 access and faster responses",
@@ -180,7 +183,7 @@ For production use, consider:
 1. Open browser DevTools (F12)
 2. Go to Console tab
 3. Run: `sessionStorage.clear()`
-4. Go to `admin.html`
+4. Go to `admin/admin.html`
 5. Default password is `admin123`
 
 ### Links Not Showing on Main Site
@@ -195,7 +198,7 @@ If you accidentally cleared all links:
 3. Or manually re-add links
 
 ### Password Reset
-1. Open `admin.js` in code editor
+1. Open `admin/admin.js` in code editor
 2. Change line 18: `password: btoa('admin123'),`
 3. Refresh the admin page
 4. Login with your new password
@@ -215,7 +218,7 @@ If you accidentally cleared all links:
 
 When deploying to GitHub Pages or hosting:
 
-1. **Keep admin.html secure** - password protects editing
+1. **Keep admin/ excluded** - use .gitignore
 2. **Main site is public** - anyone can view (links open affiliate URLs)
 3. **localStorage is browser-local** - different devices have separate data
 4. **NO backend needed** - everything works on the client
@@ -224,7 +227,7 @@ When deploying to GitHub Pages or hosting:
 1. Edit your links via admin panel
 2. Commit changes to GitHub
 3. Push to your hosting service
-4. Admin panel available at `yourdomain.com/admin.html`
+4. Admin panel available at `yourdomain.com/admin/admin.html`
 
 ---
 
@@ -258,7 +261,7 @@ When deploying to GitHub Pages or hosting:
 
 ## ✅ Next Steps
 
-1. ✅ Change admin password in `admin.js`
+1. ✅ Change admin password in `admin/admin.js`
 2. ✅ Add your first link
 3. ✅ Customize the main site brand
 4. ✅ Add analytics IDs (GA4, Clarity)

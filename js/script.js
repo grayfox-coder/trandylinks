@@ -210,7 +210,7 @@ function createLinkCard(link, index) {
   
   card.innerHTML = `
     <div class="card-header">
-      <span class="card-icon">${link.icon || '🔗'}</span>
+      <img class="card-image" src="${link.image}" alt="${escapeHtml(link.title)}" onerror="this.style.display='none'">
       ${badgeHTML}
     </div>
     <h3 class="card-title">${escapeHtml(link.title)}</h3>
