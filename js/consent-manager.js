@@ -5,10 +5,13 @@
    (GA4 and Microsoft Clarity)
    ============================================ */
 
-const CONSENT_CONFIG = {
-  storageKey: 'affiliatehub-consent',
-  consentVersion: '1.0'
-};
+// Guard against redeclaration
+if (typeof CONSENT_CONFIG === 'undefined') {
+  var CONSENT_CONFIG = {
+    storageKey: 'affiliatehub-consent',
+    consentVersion: '1.0'
+  };
+}
 
 // Get current consent state
 function getConsentState() {
@@ -69,7 +72,7 @@ function loadGA4() {
   // Prevent duplicate loading
   if (window.gtag) return;
   
-  // GA4 configuration
+  // GA4 configuration - REPLACE WITH YOUR GA4 ID
   const GA4_ID = 'G-3JBPH7TFEG'; // Replace with your GA4 ID
   
   // Initialize dataLayer
@@ -82,7 +85,12 @@ function loadGA4() {
   
   window.gtag = gtag;
   gtag('js', new Date());
-  gtag('config', GA4_ID);
+  
+  // Configure GA4 with proper cookie domain
+  gtag('config', GA4_ID, {
+    cookie_domain: 'auto', // Let GA4 auto-detect the domain
+    cookie_flags: 'SameSite=None;Secure'
+  });
   
   // Load GA4 script
   const script = document.createElement('script');
@@ -96,12 +104,12 @@ function loadClarity() {
   // Prevent duplicate loading
   if (window.clarity) return;
   
-  // Clarity configuration
-  const CLARITY_ID = 'YOUR_CLARITY_ID'; // Replace with your Clarity ID
+  // Clarity configuration - REPLACE WITH YOUR CLARITY PROJECT ID
+  const CLARITY_ID = 'wajawwcwkl'; // Replace with your Clarity ID from clarity.microsoft.com
   
-  // Only load if ID is configured
+  // Only load if ID is configured (not placeholder)
   if (CLARITY_ID === 'wajawwcwkl') {
-    console.warn('Clarity ID not configured. Skipping Clarity initialization.');
+    console.warn('Clarity ID not configured. Skipping Clarity initialization. Get your ID from clarity.microsoft.com');
     return;
   }
   
