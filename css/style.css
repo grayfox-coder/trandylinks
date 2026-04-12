@@ -1020,7 +1020,7 @@ input:focus-visible {
 }
 
 /* High contrast mode support */
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   :root {
     --border: #444444;
     --text-secondary: #aaaaaa;
