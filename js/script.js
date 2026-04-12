@@ -60,7 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initLoadMore();
   initEmailForm();
   initDisclosureLink();
-  initSupabaseAuth(); // Add Supabase auth initialization
+  
+  // Initialize Supabase auth if available (requires js/supabase-config.js to be loaded)
+  if (typeof initSupabaseAuth === 'function') {
+    initSupabaseAuth();
+  }
 });
 
 // ============================================

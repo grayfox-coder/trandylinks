@@ -26,5 +26,5 @@ package-lock.json
 .DS_Store
 *.tmp
 
-# subabase-config
-js/supabase-confi.js
+# supabase-config
+js/supabase-config.js
