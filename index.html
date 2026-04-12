@@ -32,23 +32,8 @@
   <!-- Supabase JS Library (UMD bundle) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-  <!-- Google Analytics 4 (GA4) - REPLACE G-XXXXXXXXXX WITH YOUR REAL GA4 MEASUREMENT ID -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX'); // Replace with your GA4 ID
-  </script>
-
-  <!-- Microsoft Clarity - REPLACE YOUR_CLARITY_ID WITH YOUR REAL CLARITY ID OR REMOVE THIS SCRIPT -->
-  <script type="text/javascript">
-    (function (c, l, a, r, i, t, y) {
-      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script", "YOUR_CLARITY_ID"); // Replace with your Clarity ID
-  </script>
+  <!-- Consent Management (loads GA4 and Clarity after user consent) -->
+  <script src="js/consent-manager.js"></script>
 </head>
 
 <body>
@@ -203,6 +188,7 @@
   </footer>
 
   <!-- JavaScript -->
+  <script src="js/consent-manager.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/script.js"></script>
 </body>

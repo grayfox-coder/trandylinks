@@ -401,6 +401,12 @@ function initDisclosureLink() {
 // ============================================
 
 function trackEvent(eventName, eventParams = {}) {
+  // Only track if user has granted consent
+  if (!hasAnalyticsConsent()) {
+    console.log(`[Tracking Blocked - No Consent] ${eventName}:`, eventParams);
+    return;
+  }
+  
   // Google Analytics 4 event
   if (typeof gtag === 'function') {
     gtag('event', eventName, eventParams);
