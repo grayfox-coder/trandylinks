@@ -25,3 +25,6 @@ package-lock.json
 # But ignore working placeholder files
 .DS_Store
 *.tmp
+
+# subabase-config
+js/supabase-config/
