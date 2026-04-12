@@ -27,4 +27,4 @@ package-lock.json
 *.tmp
 
 # subabase-config
-js/supabase-config/
+js/supabase-confi.js
