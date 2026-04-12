@@ -1,60 +1,17 @@
 /* ============================================
-   MY LINKS - JAVASCRIPT
+   MY LINKS - JAVASCRIPT (SUPABASE VERSION)
    ============================================
-
-   HOW TO ADD A NEW LINK:
-   ----------------------
-   Use the admin panel at /admin/admin.html
-   to add, edit, and manage links.
-   
-   Links are stored in Supabase and synced
-   in real-time to this page.
-
+   This version fetches links from Supabase
+   instead of localStorage
    ============================================ */
-
-// ============================================
-// AFFILIATE LINKS DATA ARRAY
-// Loaded from Supabase
-// ============================================
-
-let links = [];
-
-// ============================================
-// SUPABASE AUTHENTICATION
-// (config, client, auth state, and auth functions
-//  are in js/supabase-config.js)
-// ============================================
-
-// Initialize everything when DOM is loaded
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load links from Supabase
-  await loadLinksFromSupabase();
-  
-  // Initialize UI
-  initTheme();
-  initFTCBanner();
-  initLinksGrid();
-  initFilters();
-  initLoadMore();
-  initEmailForm();
-  initDisclosureLink();
-  
-  // Initialize Supabase auth if available (requires js/supabase-config.js to be loaded)
-  if (typeof initSupabaseAuth === 'function') {
-    initSupabaseAuth();
-  }
-  
-  // Subscribe to real-time updates
-  subscribeToLinksUpdates();
-});
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
 const CONFIG = {
-  cardsPerPage: 9,        // Number of cards to show initially
-  cardsPerLoad: 9,        // Number of cards to load on "Load More"
+  cardsPerPage: 9,
+  cardsPerLoad: 9,
   storageKeys: {
     theme: 'affiliatehub-theme',
     ftcDismissed: 'affiliatehub-ftc-dismissed',
@@ -63,71 +20,10 @@ const CONFIG = {
 };
 
 // ============================================
-// SUPABASE FUNCTIONS
-// ============================================
-
-async function loadLinksFromSupabase() {
-  try {
-    if (typeof supabaseClient === 'undefined') {
-      console.warn('Supabase client not initialized, using empty links array');
-      links = [];
-      return;
-    }
-    
-    const { data, error } = await supabaseClient
-      .from('links')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error loading links from Supabase:', error);
-      links = [];
-      return;
-    }
-    
-    links = data || [];
-    console.log(`Loaded ${links.length} links from Supabase`);
-  } catch (error) {
-    console.error('Failed to load links:', error);
-    links = [];
-  }
-}
-
-function subscribeToLinksUpdates() {
-  try {
-    if (typeof supabaseClient === 'undefined') {
-      console.warn('Supabase client not initialized, skipping real-time updates');
-      return;
-    }
-    
-    supabaseClient
-      .channel('links-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'links'
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          // Reload links when changes occur
-          loadLinksFromSupabase().then(() => {
-            // Re-render current view
-            filterAndRenderLinks(state.currentCategory);
-          });
-        }
-      )
-      .subscribe();
-  } catch (error) {
-    console.error('Failed to subscribe to updates:', error);
-  }
-}
-
-// ============================================
 // STATE MANAGEMENT
 // ============================================
 
+let links = [];
 let state = {
   currentCategory: 'all',
   visibleCount: CONFIG.cardsPerPage,
@@ -152,19 +48,61 @@ const elements = {
 };
 
 // ============================================
+// LOAD LINKS FROM SUPABASE
+// ============================================
+
+async function loadLinksFromSupabase() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('links')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading links from Supabase:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error('Error loading links:', err);
+    return [];
+  }
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load links from Supabase
+  links = await loadLinksFromSupabase();
+  
+  initTheme();
+  initFTCBanner();
+  initLinksGrid();
+  initFilters();
+  initLoadMore();
+  initEmailForm();
+  initDisclosureLink();
+  
+  // Initialize Supabase auth if available
+  if (typeof initSupabaseAuth === 'function') {
+    initSupabaseAuth();
+  }
+});
+
+// ============================================
 // THEME MANAGEMENT (Dark/Light Mode)
 // ============================================
 
 function initTheme() {
-  // Check for saved theme preference
   const savedTheme = localStorage.getItem(CONFIG.storageKeys.theme);
   
   if (savedTheme) {
     document.documentElement.setAttribute('data-theme', savedTheme);
   }
-  // Default is dark (no attribute needed)
   
-  // Theme toggle click handler
   elements.themeToggle.addEventListener('click', toggleTheme);
 }
 
@@ -179,8 +117,6 @@ function toggleTheme() {
   }
   
   localStorage.setItem(CONFIG.storageKeys.theme, newTheme);
-  
-  // Track theme toggle
   trackEvent('theme_toggle', { theme: newTheme });
 }
 
@@ -189,22 +125,18 @@ function toggleTheme() {
 // ============================================
 
 function initFTCBanner() {
-  // Check if user already dismissed the banner
   const isDismissed = localStorage.getItem(CONFIG.storageKeys.ftcDismissed);
   
   if (isDismissed === 'true') {
     elements.ftcBanner.classList.add('hidden');
   }
   
-  // Dismiss button click handler
   elements.ftcDismiss.addEventListener('click', dismissFTCBanner);
 }
 
 function dismissFTCBanner() {
   elements.ftcBanner.classList.add('hidden');
   localStorage.setItem(CONFIG.storageKeys.ftcDismissed, 'true');
-  
-  // Track dismissal
   trackEvent('ftc_banner_dismissed');
 }
 
@@ -213,21 +145,19 @@ function dismissFTCBanner() {
 // ============================================
 
 function initLinksGrid() {
-  // Initial render with all links
   filterAndRenderLinks('all');
 }
 
-function filterAndRenderLinks(category) {
-  // Filter links by category
+async function filterAndRenderLinks(category) {
+  // Re-fetch from Supabase every time
+  links = await loadLinksFromSupabase();
+  
   state.currentCategory = category;
   state.filteredLinks = category === 'all' 
     ? [...links] 
     : links.filter(link => link.category === category);
   
-  // Reset visible count
   state.visibleCount = CONFIG.cardsPerPage;
-  
-  // Render the grid
   renderLinksGrid();
   updateLoadMoreButton();
 }
@@ -235,26 +165,22 @@ function filterAndRenderLinks(category) {
 function renderLinksGrid() {
   const linksToShow = state.filteredLinks.slice(0, state.visibleCount);
   
-  // Clear existing content
   elements.linksGrid.innerHTML = '';
   
-  // Render each link card
-  linksToShow.forEach((link, index) => {
-    const card = createLinkCard(link, index);
+  linksToShow.forEach((link) => {
+    const card = createLinkCard(link);
     elements.linksGrid.appendChild(card);
   });
   
-  // Add click handlers to CTA buttons
   attachCTAHandlers();
 }
 
-function createLinkCard(link, index) {
+function createLinkCard(link) {
   const card = document.createElement('article');
   card.className = `link-card ${link.highlight ? 'highlight' : ''}`;
   card.setAttribute('data-id', link.id);
   card.setAttribute('data-category', link.category);
   
-  // Badge HTML (if present)
   const badgeHTML = link.badge 
     ? `<span class="card-badge ${link.badge.toLowerCase()}">${link.badge}</span>` 
     : '';
@@ -292,10 +218,8 @@ function handleCTAClick(event) {
   const linkUrl = button.getAttribute('data-link-url');
   const linkTitle = button.getAttribute('data-link-title');
   
-  // Find the full link data
-  const linkData = links.find(l => l.id === linkId);
+  const linkData = links.find(l => l.id === parseInt(linkId));
   
-  // Build tracking data
   const trackingData = {
     id: linkId,
     title: linkTitle,
@@ -304,13 +228,9 @@ function handleCTAClick(event) {
     category: linkData?.category || 'unknown'
   };
   
-  // Log to console
   console.log('Affiliate Link Clicked:', trackingData);
-  
-  // Push GA4 event
   trackEvent('affiliate_click', trackingData);
   
-  // Navigate to the link (use setTimeout to allow tracking to fire)
   setTimeout(() => {
     window.open(linkUrl, '_blank');
   }, 100);
@@ -325,14 +245,10 @@ function initFilters() {
     tab.addEventListener('click', () => {
       const category = tab.getAttribute('data-category');
       
-      // Update active state
       elements.filterTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       
-      // Filter and re-render
       filterAndRenderLinks(category);
-      
-      // Track filter click
       trackEvent('filter_click', { category });
     });
   });
@@ -347,14 +263,10 @@ function initLoadMore() {
 }
 
 function loadMoreCards() {
-  // Increase visible count
   state.visibleCount += CONFIG.cardsPerLoad;
-  
-  // Re-render
   renderLinksGrid();
   updateLoadMoreButton();
   
-  // Track load more
   trackEvent('load_more', { 
     category: state.currentCategory,
     visible_count: state.visibleCount 
@@ -376,7 +288,6 @@ function updateLoadMoreButton() {
 // ============================================
 
 function initEmailForm() {
-  // Check if user already submitted email
   const emailSubmitted = localStorage.getItem(CONFIG.storageKeys.emailSubmitted);
   
   if (emailSubmitted) {
@@ -396,18 +307,9 @@ function handleEmailSubmit(event) {
     return;
   }
   
-  // Store email in localStorage (for now)
   localStorage.setItem(CONFIG.storageKeys.emailSubmitted, email);
-  
-  // Show success message
   showEmailSuccess();
-  
-  // Track email submission
   trackEvent('email_subscribe', { email_domain: email.split('@')[1] });
-  
-  // Here you would typically send to your email service
-  // Example for Brevo (Sendinblue):
-  // sendToBrevo(email);
 }
 
 function showEmailSuccess() {
@@ -427,14 +329,8 @@ function isValidEmail(email) {
 function initDisclosureLink() {
   elements.disclosureLink.addEventListener('click', (e) => {
     e.preventDefault();
-    
-    // Show FTC banner if dismissed
     elements.ftcBanner.classList.remove('hidden');
-    
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Track disclosure click
     trackEvent('disclosure_link_click');
   });
 }
@@ -444,18 +340,15 @@ function initDisclosureLink() {
 // ============================================
 
 function trackEvent(eventName, eventParams = {}) {
-  // Only track if user has granted consent
   if (!hasAnalyticsConsent()) {
     console.log(`[Tracking Blocked - No Consent] ${eventName}:`, eventParams);
     return;
   }
   
-  // Google Analytics 4 event
   if (typeof gtag === 'function') {
     gtag('event', eventName, eventParams);
   }
   
-  // Also log to console for debugging
   console.log(`[GA4 Event] ${eventName}:`, eventParams);
 }
 
@@ -482,56 +375,3 @@ function formatCategory(category) {
   
   return categoryMap[category] || category;
 }
-
-// ============================================
-// BREVO INTEGRATION HELPER (Optional)
-// ============================================
-/*
-function sendToBrevo(email) {
-  // Replace with your Brevo API endpoint and key
-  const BREVO_API_KEY = 'YOUR_BREVO_API_KEY';
-  const LIST_ID = 'YOUR_LIST_ID';
-  
-  fetch('https://api.brevo.com/v3/contacts', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'api-key': BREVO_API_KEY
-    },
-    body: JSON.stringify({
-      email: email,
-      listIds: [LIST_ID],
-      updateEnabled: true
-    })
-  })
-  .then(response => response.json())
-  .then(data => console.log('Brevo response:', data))
-  .catch(error => console.error('Brevo error:', error));
-}
-*/
-
-// ============================================
-// REDIRECT PAGE HELPER (for /go/ pages)
-// ============================================
-/*
-  Usage in redirect pages:
-  
-  <script>
-    // Configuration
-    const REDIRECT_URL = 'https://your-affiliate-link.com';
-    const PRODUCT_NAME = 'Your Product';
-    const DELAY = 1500; // milliseconds
-    
-    // Track and redirect
-    setTimeout(() => {
-      if (typeof gtag === 'function') {
-        gtag('event', 'affiliate_redirect', {
-          product: PRODUCT_NAME,
-          destination: REDIRECT_URL
-        });
-      }
-      window.location.href = REDIRECT_URL;
-    }, DELAY);
-  </script>
-*/
