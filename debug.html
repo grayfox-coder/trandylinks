@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Test</title>
+  <style>
+    body { font-family: monospace; background: #0a0a0a; color: #e2e8f0; padding: 2rem; }
+    .pass { color: #00e5a0; }
+    .fail { color: #ff3b5c; }
+    .warn { color: #ffa500; }
+    .box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
+    h2 { color: #fff; margin-top: 1.5rem; }
+    pre { white-space: pre-wrap; word-break: break-all; font-size: 0.8rem; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>🔍 TrandyLinks Debug Test</h1>
+  <p style="color:#888">Open this file in your browser. It will tell you exactly what's broken.</p>
+
+  <div id="results"></div>
+
+  <!-- STEP 1: Load Supabase library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- STEP 2: Load your config -->
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    const out = document.getElementById('results');
+
+    function log(label, pass, detail = '') {
+      const cls = pass === true ? 'pass' : pass === false ? 'fail' : 'warn';
+      const icon = pass === true ? '✅' : pass === false ? '❌' : '⚠️';
+      out.innerHTML += `
+        <div class="box">
+          <span class="${cls}">${icon} ${label}</span>
+          ${detail ? `<pre>${detail}</pre>` : ''}
+        </div>`;
+    }
+
+    async function runTests() {
+      // Test 1: Supabase library loaded?
+      log('Supabase library loaded', typeof supabase !== 'undefined',
+        typeof supabase === 'undefined' ? 'supabase is undefined — CDN script failed to load' : 'supabase object exists');
+
+      // Test 2: supabaseClient initialized?
+      log('supabaseClient initialized', typeof supabaseClient !== 'undefined',
+        typeof supabaseClient === 'undefined'
+          ? 'supabaseClient is undefined — supabase-config.js is empty or has an error'
+          : 'supabaseClient object exists');
+
+      if (typeof supabaseClient === 'undefined') {
+        log('⛔ Cannot continue — fix supabaseClient first', null);
+        return;
+      }
+
+      // Test 3: Can reach Supabase at all?
+      try {
+        const { data, error } = await supabaseClient.from('links').select('count', { count: 'exact', head: true });
+        if (error) {
+          log('Supabase connection', false, JSON.stringify(error, null, 2));
+        } else {
+          log('Supabase connection', true, 'Successfully reached Supabase');
+        }
+      } catch (e) {
+        log('Supabase connection', false, e.message);
+      }
+
+      // Test 4: Can fetch links?
+      try {
+        const { data, error } = await supabaseClient.from('links').select('*').limit(5);
+        if (error) {
+          log('Fetch links from DB', false,
+            `Error: ${error.message}\nCode: ${error.code}\nHint: ${error.hint || 'none'}`);
+        } else if (!data || data.length === 0) {
+          log('Fetch links from DB', null,
+            '⚠️ Query succeeded but returned 0 rows.\nEither:\n  1. You have no links added yet, OR\n  2. RLS policy is blocking public reads\n\nRun the fixed SQL from SUPABASE_SQL_SETUP.sql');
+        } else {
+          log('Fetch links from DB', true,
+            `Found ${data.length} link(s). First: "${data[0].title}"`);
+        }
+      } catch (e) {
+        log('Fetch links from DB', false, e.message);
+      }
+
+      // Test 5: Table structure — does it have expected columns?
+      try {
+        const { data, error } = await supabaseClient.from('links').select('id, title, url, category, image, badge, commission, cta, highlight, created_at').limit(1);
+        if (!error && data !== null) {
+          log('Table columns look correct', true, 'id, title, url, category etc. all present');
+        } else if (error) {
+          log('Table columns', false, `Missing columns or table doesn't exist:\n${error.message}`);
+        }
+      } catch (e) {
+        log('Table column check', false, e.message);
+      }
+
+      // Summary
+      out.innerHTML += `
+        <h2>📋 What to do next</h2>
+        <div class="box">
+          <p>1. If <span class="fail">supabaseClient is undefined</span>: your js/supabase-config.js is empty. Replace it with the fixed version.</p>
+          <p>2. If <span class="warn">0 rows returned</span>: re-run the fixed SUPABASE_SQL_SETUP.sql in Supabase SQL Editor.</p>
+          <p>3. If <span class="fail">connection error</span>: check your SUPABASE_URL and SUPABASE_ANON_KEY in supabase-config.js.</p>
+          <p>4. If all green but still no links on main site: the links table is empty — add a link via admin panel first.</p>
+        </div>`;
+    }
+
+    runTests();
+  </script>
+</body>
+</html>
