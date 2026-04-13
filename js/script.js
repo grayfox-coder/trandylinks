@@ -1,60 +1,19 @@
 /* ============================================
-   MY LINKS - JAVASCRIPT
+   MY LINKS - JAVASCRIPT (FIXED)
    ============================================
-
-   HOW TO ADD A NEW LINK:
-   ----------------------
-   Use the admin panel at /admin/admin.html
-   to add, edit, and manage links.
-   
-   Links are stored in Supabase and synced
-   in real-time to this page.
-
+   Links are loaded from Supabase and update
+   in real-time when admin makes changes.
    ============================================ */
 
-// ============================================
-// AFFILIATE LINKS DATA ARRAY
-// Loaded from Supabase
-// ============================================
-
 let links = [];
-
-// ============================================
-// SUPABASE AUTHENTICATION
-// (config, client, auth state, and auth functions
-//  are in js/supabase-config.js)
-// ============================================
-
-// Initialize everything when DOM is loaded
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load links from Supabase
-  await loadLinksFromSupabase();
-  
-  // Initialize UI
-  initTheme();
-  initFTCBanner();
-  initLinksGrid();
-  initFilters();
-  initLoadMore();
-  initEmailForm();
-  initDisclosureLink();
-  
-  // Initialize Supabase auth if available (requires js/supabase-config.js to be loaded)
-  if (typeof initSupabaseAuth === 'function') {
-    initSupabaseAuth();
-  }
-  
-  // Subscribe to real-time updates
-  subscribeToLinksUpdates();
-});
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
 const CONFIG = {
-  cardsPerPage: 9,        // Number of cards to show initially
-  cardsPerLoad: 9,        // Number of cards to load on "Load More"
+  cardsPerPage: 9,
+  cardsPerLoad: 9,
   storageKeys: {
     theme: 'affiliatehub-theme',
     ftcDismissed: 'affiliatehub-ftc-dismissed',
@@ -63,69 +22,7 @@ const CONFIG = {
 };
 
 // ============================================
-// SUPABASE FUNCTIONS
-// ============================================
-
-async function loadLinksFromSupabase() {
-  try {
-    if (typeof supabaseClient === 'undefined') {
-      console.warn('Supabase client not initialized, using empty links array');
-      links = [];
-      return;
-    }
-    
-    const { data, error } = await supabaseClient
-      .from('links')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error loading links from Supabase:', error);
-      links = [];
-      return;
-    }
-    
-    links = data || [];
-    console.log(`Loaded ${links.length} links from Supabase`);
-  } catch (error) {
-    console.error('Failed to load links:', error);
-    links = [];
-  }
-}
-
-function subscribeToLinksUpdates() {
-  try {
-    if (typeof supabaseClient === 'undefined') {
-      console.warn('Supabase client not initialized, skipping real-time updates');
-      return;
-    }
-    
-    supabaseClient
-      .channel('links-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'links'
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          // Reload links when changes occur
-          loadLinksFromSupabase().then(() => {
-            // Re-render current view
-            filterAndRenderLinks(state.currentCategory);
-          });
-        }
-      )
-      .subscribe();
-  } catch (error) {
-    console.error('Failed to subscribe to updates:', error);
-  }
-}
-
-// ============================================
-// STATE MANAGEMENT
+// STATE
 // ============================================
 
 let state = {
@@ -139,49 +36,119 @@ let state = {
 // ============================================
 
 const elements = {
-  ftcBanner: document.getElementById('ftc-banner'),
-  ftcDismiss: document.getElementById('ftc-dismiss'),
-  themeToggle: document.getElementById('theme-toggle'),
-  linksGrid: document.getElementById('links-grid'),
-  loadMoreBtn: document.getElementById('load-more'),
-  filterTabs: document.querySelectorAll('.filter-tab'),
-  emailForm: document.getElementById('email-form'),
-  emailInput: document.getElementById('email-input'),
-  emailSuccess: document.getElementById('email-success'),
+  ftcBanner:      document.getElementById('ftc-banner'),
+  ftcDismiss:     document.getElementById('ftc-dismiss'),
+  themeToggle:    document.getElementById('theme-toggle'),
+  linksGrid:      document.getElementById('links-grid'),
+  loadMoreBtn:    document.getElementById('load-more'),
+  filterTabs:     document.querySelectorAll('.filter-tab'),
+  emailForm:      document.getElementById('email-form'),
+  emailInput:     document.getElementById('email-input'),
+  emailSuccess:   document.getElementById('email-success'),
   disclosureLink: document.getElementById('disclosure-link')
 };
 
 // ============================================
-// THEME MANAGEMENT (Dark/Light Mode)
+// INIT
+// ============================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+  initFTCBanner();
+  initFilters();
+  initLoadMore();
+  initEmailForm();
+  initDisclosureLink();
+
+  // Show loading state while fetching
+  if (elements.linksGrid) {
+    elements.linksGrid.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">Loading links…</p>';
+  }
+
+  await loadLinksFromSupabase();
+  filterAndRenderLinks(state.currentCategory);
+
+  // ✅ FIX: Real-time subscription WITHOUT user_id filter
+  //    (main site is public/unauthenticated, filter would break it)
+  subscribeToLinksUpdates();
+});
+
+// ============================================
+// SUPABASE: LOAD LINKS
+// ============================================
+
+async function loadLinksFromSupabase() {
+  try {
+    if (typeof supabaseClient === 'undefined') {
+      console.error('❌ supabaseClient is not defined. Check that supabase-config.js is loaded and non-empty.');
+      links = [];
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from('links')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading links from Supabase:', error);
+      links = [];
+      return;
+    }
+
+    links = data || [];
+    console.log(`✅ Loaded ${links.length} links from Supabase`);
+  } catch (err) {
+    console.error('Failed to load links:', err);
+    links = [];
+  }
+}
+
+// ============================================
+// SUPABASE: REAL-TIME SUBSCRIPTION (FIXED)
+// ============================================
+
+function subscribeToLinksUpdates() {
+  if (typeof supabaseClient === 'undefined') return;
+
+  supabaseClient
+    .channel('public-links-updates')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'links'
+        // ✅ NO user_id filter here — main site is unauthenticated
+      },
+      async (payload) => {
+        console.log('Real-time update received:', payload);
+        await loadLinksFromSupabase();
+        filterAndRenderLinks(state.currentCategory);
+      }
+    )
+    .subscribe();
+}
+
+// ============================================
+// THEME
 // ============================================
 
 function initTheme() {
-  // Check for saved theme preference
   const savedTheme = localStorage.getItem(CONFIG.storageKeys.theme);
-  
-  if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }
-  // Default is dark (no attribute needed)
-  
-  // Theme toggle click handler
-  elements.themeToggle.addEventListener('click', toggleTheme);
-}
+  if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
 
-function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-  
-  if (newTheme === 'dark') {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', newTheme);
-  }
-  
-  localStorage.setItem(CONFIG.storageKeys.theme, newTheme);
-  
-  // Track theme toggle
-  trackEvent('theme_toggle', { theme: newTheme });
+  elements.themeToggle?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    if (next === 'dark') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    localStorage.setItem(CONFIG.storageKeys.theme, next);
+    trackEvent('theme_toggle', { theme: next });
+  });
 }
 
 // ============================================
@@ -189,235 +156,154 @@ function toggleTheme() {
 // ============================================
 
 function initFTCBanner() {
-  // Check if user already dismissed the banner
-  const isDismissed = localStorage.getItem(CONFIG.storageKeys.ftcDismissed);
-  
-  if (isDismissed === 'true') {
-    elements.ftcBanner.classList.add('hidden');
+  if (localStorage.getItem(CONFIG.storageKeys.ftcDismissed) === 'true') {
+    elements.ftcBanner?.classList.add('hidden');
   }
-  
-  // Dismiss button click handler
-  elements.ftcDismiss.addEventListener('click', dismissFTCBanner);
-}
-
-function dismissFTCBanner() {
-  elements.ftcBanner.classList.add('hidden');
-  localStorage.setItem(CONFIG.storageKeys.ftcDismissed, 'true');
-  
-  // Track dismissal
-  trackEvent('ftc_banner_dismissed');
+  elements.ftcDismiss?.addEventListener('click', () => {
+    elements.ftcBanner?.classList.add('hidden');
+    localStorage.setItem(CONFIG.storageKeys.ftcDismissed, 'true');
+    trackEvent('ftc_banner_dismissed');
+  });
 }
 
 // ============================================
-// LINKS GRID RENDERING
+// LINKS GRID
 // ============================================
-
-function initLinksGrid() {
-  // Initial render with all links
-  filterAndRenderLinks('all');
-}
 
 function filterAndRenderLinks(category) {
-  // Filter links by category
   state.currentCategory = category;
-  state.filteredLinks = category === 'all' 
-    ? [...links] 
-    : links.filter(link => link.category === category);
-  
-  // Reset visible count
+  state.filteredLinks = category === 'all'
+    ? [...links]
+    : links.filter(l => l.category === category);
   state.visibleCount = CONFIG.cardsPerPage;
-  
-  // Render the grid
   renderLinksGrid();
   updateLoadMoreButton();
 }
 
 function renderLinksGrid() {
-  const linksToShow = state.filteredLinks.slice(0, state.visibleCount);
-  
-  // Clear existing content
+  if (!elements.linksGrid) return;
+
+  const toShow = state.filteredLinks.slice(0, state.visibleCount);
+
+  if (toShow.length === 0) {
+    elements.linksGrid.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">No links found in this category.</p>';
+    return;
+  }
+
   elements.linksGrid.innerHTML = '';
-  
-  // Render each link card
-  linksToShow.forEach((link, index) => {
-    const card = createLinkCard(link, index);
-    elements.linksGrid.appendChild(card);
+  toShow.forEach((link) => {
+    elements.linksGrid.appendChild(createLinkCard(link));
   });
-  
-  // Add click handlers to CTA buttons
+
   attachCTAHandlers();
 }
 
-function createLinkCard(link, index) {
+function createLinkCard(link) {
   const card = document.createElement('article');
   card.className = `link-card ${link.highlight ? 'highlight' : ''}`;
   card.setAttribute('data-id', link.id);
   card.setAttribute('data-category', link.category);
-  
-  // Badge HTML (if present)
-  const badgeHTML = link.badge 
-    ? `<span class="card-badge ${link.badge.toLowerCase()}">${link.badge}</span>` 
+
+  const badgeHTML = link.badge
+    ? `<span class="card-badge ${link.badge.toLowerCase()}">${link.badge}</span>`
     : '';
-  
+
   card.innerHTML = `
     <div class="card-header">
-      <img class="card-image" src="${link.image}" alt="${escapeHtml(link.title)}" onerror="this.style.display='none'">
+      <img class="card-image" src="${link.image || ''}" alt="${escapeHtml(link.title)}" onerror="this.style.display='none'">
       ${badgeHTML}
     </div>
     <h3 class="card-title">${escapeHtml(link.title)}</h3>
-    <p class="card-description">${escapeHtml(link.description)}</p>
+    <p class="card-description">${escapeHtml(link.description || '')}</p>
     <div class="card-meta">
       <span class="category-tag">${formatCategory(link.category)}</span>
-      <span class="commission-text">${escapeHtml(link.commission)}</span>
+      <span class="commission-text">${escapeHtml(link.commission || '')}</span>
     </div>
-    <button class="card-cta" data-link-id="${link.id}" data-link-url="${link.url}" data-link-title="${escapeHtml(link.title)}">
-      ${escapeHtml(link.cta)}
+    <button class="card-cta"
+      data-link-id="${link.id}"
+      data-link-url="${link.url}"
+      data-link-title="${escapeHtml(link.title)}">
+      ${escapeHtml(link.cta || 'Learn More')}
     </button>
   `;
-  
   return card;
 }
 
 function attachCTAHandlers() {
-  const ctaButtons = elements.linksGrid.querySelectorAll('.card-cta');
-  
-  ctaButtons.forEach(button => {
-    button.addEventListener('click', handleCTAClick);
-  });
-}
-
-function handleCTAClick(event) {
-  const button = event.currentTarget;
-  const linkId = button.getAttribute('data-link-id');
-  const linkUrl = button.getAttribute('data-link-url');
-  const linkTitle = button.getAttribute('data-link-title');
-  
-  // Find the full link data
-  const linkData = links.find(l => l.id === linkId);
-  
-  // Build tracking data
-  const trackingData = {
-    id: linkId,
-    title: linkTitle,
-    url: linkUrl,
-    timestamp: new Date().toISOString(),
-    category: linkData?.category || 'unknown'
-  };
-  
-  // Log to console
-  console.log('Affiliate Link Clicked:', trackingData);
-  
-  // Push GA4 event
-  trackEvent('affiliate_click', trackingData);
-  
-  // Navigate to the link (use setTimeout to allow tracking to fire)
-  setTimeout(() => {
-    window.open(linkUrl, '_blank');
-  }, 100);
-}
-
-// ============================================
-// CATEGORY FILTERS
-// ============================================
-
-function initFilters() {
-  elements.filterTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const category = tab.getAttribute('data-category');
-      
-      // Update active state
-      elements.filterTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      
-      // Filter and re-render
-      filterAndRenderLinks(category);
-      
-      // Track filter click
-      trackEvent('filter_click', { category });
+  elements.linksGrid.querySelectorAll('.card-cta').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const b = e.currentTarget;
+      const linkData = links.find(l => l.id == b.getAttribute('data-link-id'));
+      trackEvent('affiliate_click', {
+        id:        b.getAttribute('data-link-id'),
+        title:     b.getAttribute('data-link-title'),
+        url:       b.getAttribute('data-link-url'),
+        category:  linkData?.category || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+      setTimeout(() => window.open(b.getAttribute('data-link-url'), '_blank'), 100);
     });
   });
 }
 
 // ============================================
-// LOAD MORE FUNCTIONALITY
+// FILTERS
+// ============================================
+
+function initFilters() {
+  elements.filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      elements.filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      filterAndRenderLinks(tab.getAttribute('data-category'));
+      trackEvent('filter_click', { category: tab.getAttribute('data-category') });
+    });
+  });
+}
+
+// ============================================
+// LOAD MORE
 // ============================================
 
 function initLoadMore() {
-  elements.loadMoreBtn.addEventListener('click', loadMoreCards);
-}
-
-function loadMoreCards() {
-  // Increase visible count
-  state.visibleCount += CONFIG.cardsPerLoad;
-  
-  // Re-render
-  renderLinksGrid();
-  updateLoadMoreButton();
-  
-  // Track load more
-  trackEvent('load_more', { 
-    category: state.currentCategory,
-    visible_count: state.visibleCount 
+  elements.loadMoreBtn?.addEventListener('click', () => {
+    state.visibleCount += CONFIG.cardsPerLoad;
+    renderLinksGrid();
+    updateLoadMoreButton();
+    trackEvent('load_more', { category: state.currentCategory, visible_count: state.visibleCount });
   });
 }
 
 function updateLoadMoreButton() {
+  if (!elements.loadMoreBtn) return;
   const hasMore = state.visibleCount < state.filteredLinks.length;
-  
-  if (hasMore) {
-    elements.loadMoreBtn.classList.remove('hidden');
-  } else {
-    elements.loadMoreBtn.classList.add('hidden');
-  }
+  elements.loadMoreBtn.classList.toggle('hidden', !hasMore);
 }
 
 // ============================================
-// EMAIL CAPTURE FORM
+// EMAIL FORM
 // ============================================
 
 function initEmailForm() {
-  // Check if user already submitted email
-  const emailSubmitted = localStorage.getItem(CONFIG.storageKeys.emailSubmitted);
-  
-  if (emailSubmitted) {
+  if (localStorage.getItem(CONFIG.storageKeys.emailSubmitted)) {
     showEmailSuccess();
   }
-  
-  elements.emailForm.addEventListener('submit', handleEmailSubmit);
-}
-
-function handleEmailSubmit(event) {
-  event.preventDefault();
-  
-  const email = elements.emailInput.value.trim();
-  
-  if (!email || !isValidEmail(email)) {
-    alert('Please enter a valid email address.');
-    return;
-  }
-  
-  // Store email in localStorage (for now)
-  localStorage.setItem(CONFIG.storageKeys.emailSubmitted, email);
-  
-  // Show success message
-  showEmailSuccess();
-  
-  // Track email submission
-  trackEvent('email_subscribe', { email_domain: email.split('@')[1] });
-  
-  // Here you would typically send to your email service
-  // Example for Brevo (Sendinblue):
-  // sendToBrevo(email);
+  elements.emailForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = elements.emailInput?.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    localStorage.setItem(CONFIG.storageKeys.emailSubmitted, email);
+    showEmailSuccess();
+    trackEvent('email_subscribe', { email_domain: email.split('@')[1] });
+  });
 }
 
 function showEmailSuccess() {
-  elements.emailForm.classList.add('hidden');
-  elements.emailSuccess.classList.remove('hidden');
-}
-
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  elements.emailForm?.classList.add('hidden');
+  elements.emailSuccess?.classList.remove('hidden');
 }
 
 // ============================================
@@ -425,52 +311,34 @@ function isValidEmail(email) {
 // ============================================
 
 function initDisclosureLink() {
-  elements.disclosureLink.addEventListener('click', (e) => {
+  elements.disclosureLink?.addEventListener('click', (e) => {
     e.preventDefault();
-    
-    // Show FTC banner if dismissed
-    elements.ftcBanner.classList.remove('hidden');
-    
-    // Scroll to top
+    elements.ftcBanner?.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Track disclosure click
-    trackEvent('disclosure_link_click');
   });
 }
 
 // ============================================
-// ANALYTICS & TRACKING
+// ANALYTICS
 // ============================================
 
 function trackEvent(eventName, eventParams = {}) {
-  // Only track if user has granted consent
-  if (!hasAnalyticsConsent()) {
-    console.log(`[Tracking Blocked - No Consent] ${eventName}:`, eventParams);
-    return;
-  }
-  
-  // Google Analytics 4 event
-  if (typeof gtag === 'function') {
-    gtag('event', eventName, eventParams);
-  }
-  
-  // Also log to console for debugging
-  console.log(`[GA4 Event] ${eventName}:`, eventParams);
+  if (!hasAnalyticsConsent()) return;
+  if (typeof gtag === 'function') gtag('event', eventName, eventParams);
 }
 
 // ============================================
-// UTILITY FUNCTIONS
+// UTILITIES
 // ============================================
 
 function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
 }
 
-function formatCategory(category) {
-  const categoryMap = {
+function formatCategory(cat) {
+  const map = {
     'recommended': 'Recommended',
     'deals': 'Deals',
     'ai-tools': 'AI Tools',
@@ -479,59 +347,5 @@ function formatCategory(category) {
     'health': 'Health',
     'resources': 'Resources'
   };
-  
-  return categoryMap[category] || category;
+  return map[cat] || cat;
 }
-
-// ============================================
-// BREVO INTEGRATION HELPER (Optional)
-// ============================================
-/*
-function sendToBrevo(email) {
-  // Replace with your Brevo API endpoint and key
-  const BREVO_API_KEY = 'YOUR_BREVO_API_KEY';
-  const LIST_ID = 'YOUR_LIST_ID';
-  
-  fetch('https://api.brevo.com/v3/contacts', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'api-key': BREVO_API_KEY
-    },
-    body: JSON.stringify({
-      email: email,
-      listIds: [LIST_ID],
-      updateEnabled: true
-    })
-  })
-  .then(response => response.json())
-  .then(data => console.log('Brevo response:', data))
-  .catch(error => console.error('Brevo error:', error));
-}
-*/
-
-// ============================================
-// REDIRECT PAGE HELPER (for /go/ pages)
-// ============================================
-/*
-  Usage in redirect pages:
-  
-  <script>
-    // Configuration
-    const REDIRECT_URL = 'https://your-affiliate-link.com';
-    const PRODUCT_NAME = 'Your Product';
-    const DELAY = 1500; // milliseconds
-    
-    // Track and redirect
-    setTimeout(() => {
-      if (typeof gtag === 'function') {
-        gtag('event', 'affiliate_redirect', {
-          product: PRODUCT_NAME,
-          destination: REDIRECT_URL
-        });
-      }
-      window.location.href = REDIRECT_URL;
-    }, DELAY);
-  </script>
-*/
